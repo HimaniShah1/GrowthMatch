@@ -23,7 +23,7 @@ export default function AvailabilityScreen() {
     const result = await dispatch(submitOnboarding());
     if (submitOnboarding.fulfilled.match(result)) {
       await dispatch(fetchCurrentUser());
-      router.replace(asRoute('/(tabs)/dashboard'));
+      router.replace(asRoute('/(tabs)/discover'));
     }
   };
 

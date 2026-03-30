@@ -70,51 +70,6 @@ const parseError = (error: unknown) => {
   return error.message;
 };
 
-// export const signUpUser = createAsyncThunk<
-//   { user: User; session: Session | null; profile: UserProfile | null },
-//   { email: string; password: string; name: string; city: string },
-//   { rejectValue: string }
-// >(
-//   "auth/signUpUser",
-//   async ({ email, password, name, city }, { rejectWithValue }) => {
-//     try {
-//       const { data, error } = await supabase.auth.signUp({
-//         email: email.trim(),
-//         password,
-//       });
-
-//       if (error || !data.user) {
-//         throw new Error(error?.message ?? "Could not create account.");
-//       }
-
-//       const { error: insertError } = await supabase.from("users").upsert(
-//         {
-//           id: data.user.id,
-//           name: name.trim(),
-//           city: city.trim(),
-//           goals: [],
-//           onboarding_completed: false,
-//         },
-//         { onConflict: "id" },
-//       );
-
-//       if (insertError) {
-//         throw new Error(insertError.message);
-//       }
-
-//       const profile = await readProfile(data.user.id);
-
-//       return {
-//         user: data.user,
-//         session: data.session,
-//         profile,
-//       };
-//     } catch (error) {
-//       return rejectWithValue(parseError(error));
-//     }
-//   },
-// );
-
 export const signUpUser = createAsyncThunk<
   { user: User; session: Session; profile: UserProfile | null },
   { email: string; password: string; name: string; city: string },

@@ -26,7 +26,7 @@ export default function LoginScreen() {
 
     if (signInUser.fulfilled.match(result)) {
       if (result.payload.profile?.onboarding_completed) {
-        router.replace(asRoute('/(tabs)/dashboard'));
+        router.replace(asRoute('/(tabs)/discover'));
       } else {
         router.replace(asRoute('/onboarding/goals'));
       }

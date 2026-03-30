@@ -35,6 +35,7 @@ import { AuthRedirect } from "@/src/components/AuthRedirect";
 import { store } from "@/src/store/store";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider as ReduxProvider } from "react-redux";
 
 export default function RootLayout() {
@@ -45,9 +46,11 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ReduxProvider store={store}>
-      <Stack screenOptions={{ headerShown: false }} />
-      {isMounted && <AuthRedirect />}
-    </ReduxProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ReduxProvider store={store}>
+        <Stack screenOptions={{ headerShown: false }} />
+        {isMounted && <AuthRedirect />}
+      </ReduxProvider>
+    </GestureHandlerRootView>
   );
 }

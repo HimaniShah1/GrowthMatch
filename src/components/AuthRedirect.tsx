@@ -45,7 +45,11 @@ export function AuthRedirect() {
 
     const inAuth = pathname.startsWith('/(auth)') || pathname === '/login' || pathname === '/register';
     const inOnboarding = pathname.startsWith('/onboarding');
-    const inTabs = pathname.startsWith('/(tabs)') || pathname === '/dashboard';
+    const inTabs =
+      pathname.startsWith('/(tabs)') ||
+      pathname === '/discover' ||
+      pathname === '/matches' ||
+      pathname === '/partners';
 
     if (!user) {
       if (!inAuth) {
@@ -68,7 +72,7 @@ export function AuthRedirect() {
     }
 
     if (!inTabs) {
-      router.replace(asRoute('/(tabs)/dashboard'));
+      router.replace(asRoute('/(tabs)/discover'));
     }
   }, [bootstrapping, loading, pathname, profile, rootNavigationState?.key, router, user]);
 
