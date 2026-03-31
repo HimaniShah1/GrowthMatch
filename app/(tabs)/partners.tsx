@@ -4,13 +4,13 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ScreenContainer } from '@/src/components/ScreenContainer';
 import { MatchListCard } from '@/src/features/matches/MatchCard';
-import { fetchMatches } from '@/src/features/matches/matchesSlice';
+import { endMatchThunk, fetchMatches } from '@/src/features/matches/matchesSlice';
 import { supabase } from '@/src/lib/supabase';
 import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 
 export default function PartnersScreen() {
   const dispatch = useAppDispatch();
-  const { active, loading, error } = useAppSelector((state) => state.matches);
+  const { active, loading, error, endingById } = useAppSelector((state) => state.matches);
 
   useEffect(() => {
     dispatch(fetchMatches());
@@ -56,7 +56,25 @@ export default function PartnersScreen() {
                 </Text>
               </View>
             }
-            renderItem={({ item }) => <MatchListCard item={item} />}
+            renderItem={({ item }) => (
+              <MatchListCard
+                item={item}
+                primaryAction={{
+                  label: 'Open Goal Tracker',
+                  variant: 'primary',
+                  onPress: () => {
+                    // Goal tracker route will be wired in a dedicated feature.
+                  },
+                }}
+                secondaryAction={{
+                  label: 'End Commitment',
+                  variant: 'secondary',
+                  loading: Boolean(endingById[item.match.id]),
+                  disabled: Boolean(endingById[item.match.id]),
+                  onPress: () => dispatch(endMatchThunk({ matchId: item.match.id })),
+                }}
+              />
+            )}
           />
         )}
       </Animated.View>

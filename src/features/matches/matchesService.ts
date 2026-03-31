@@ -232,3 +232,51 @@ export const confirmCommitment = async (
 
   return updatedMatch;
 };
+
+export const endMatch = async (
+  matchId: string,
+  currentUserId: string,
+): Promise<MatchRecord> => {
+  const { data: match, error: fetchError } = await supabase
+    .from('matches')
+    .select(matchColumns)
+    .eq('id', matchId)
+    .maybeSingle<MatchRecord>();
+
+  if (fetchError) throw new Error(fetchError.message);
+  if (!match) throw new Error('Match not found.');
+
+  const isParticipant = match.user1 === currentUserId || match.user2 === currentUserId;
+  if (!isParticipant) {
+    throw new Error('Only match participants can end this match.');
+  }
+
+  if (match.status === 'ended') {
+    return match;
+  }
+
+  const { data: endedMatch, error: updateError } = await supabase
+    .from('matches')
+    .update({ status: 'ended' })
+    .eq('id', matchId)
+    .neq('status', 'ended')
+    .select(matchColumns)
+    .maybeSingle<MatchRecord>();
+
+  if (updateError) throw new Error(updateError.message);
+
+  if (endedMatch) {
+    return endedMatch;
+  }
+
+  const { data: latest, error: latestError } = await supabase
+    .from('matches')
+    .select(matchColumns)
+    .eq('id', matchId)
+    .maybeSingle<MatchRecord>();
+
+  if (latestError) throw new Error(latestError.message);
+  if (!latest) throw new Error('Match not found after ending.');
+
+  return latest;
+};

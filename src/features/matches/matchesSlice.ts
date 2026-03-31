@@ -4,6 +4,7 @@ import type { RootState } from '@/src/store/store';
 
 import {
   confirmCommitment,
+  endMatch,
   loadMatchesForUser,
   type MatchWithPartner,
 } from './matchesService';
@@ -13,6 +14,7 @@ type MatchesState = {
   active: MatchWithPartner[];
   loading: boolean;
   confirmingById: Record<string, boolean>;
+  endingById: Record<string, boolean>;
   error: string | null;
 };
 
@@ -21,6 +23,7 @@ const initialState: MatchesState = {
   active: [],
   loading: false,
   confirmingById: {},
+  endingById: {},
   error: null,
 };
 
@@ -63,6 +66,26 @@ export const confirmMatchCommitment = createAsyncThunk<
   }
 });
 
+export const endMatchThunk = createAsyncThunk<
+  { matchId: string },
+  { matchId: string },
+  { state: RootState; rejectValue: string }
+>('matches/endMatchThunk', async ({ matchId }, { getState, rejectWithValue }) => {
+  try {
+    const currentUserId = getState().auth.user?.id;
+    if (!currentUserId) {
+      throw new Error('You must be logged in to end commitment.');
+    }
+
+    await endMatch(matchId, currentUserId);
+    return { matchId };
+  } catch (error) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to end match.',
+    );
+  }
+});
+
 const matchesSlice = createSlice({
   name: 'matches',
   initialState,
@@ -96,6 +119,23 @@ const matchesSlice = createSlice({
       .addCase(confirmMatchCommitment.rejected, (state, action) => {
         delete state.confirmingById[action.meta.arg.matchId];
         state.error = action.payload ?? 'Unable to start commitment.';
+      })
+      .addCase(endMatchThunk.pending, (state, action) => {
+        state.error = null;
+        state.endingById[action.meta.arg.matchId] = true;
+      })
+      .addCase(endMatchThunk.fulfilled, (state, action) => {
+        delete state.endingById[action.payload.matchId];
+        state.pending = state.pending.filter(
+          (item) => item.match.id !== action.payload.matchId,
+        );
+        state.active = state.active.filter(
+          (item) => item.match.id !== action.payload.matchId,
+        );
+      })
+      .addCase(endMatchThunk.rejected, (state, action) => {
+        delete state.endingById[action.meta.arg.matchId];
+        state.error = action.payload ?? 'Unable to end match.';
       });
   },
 });

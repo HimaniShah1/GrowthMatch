@@ -1,11 +1,12 @@
-import { useEffect, useMemo } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ScreenContainer } from '@/src/components/ScreenContainer';
 import { MatchListCard } from '@/src/features/matches/MatchCard';
 import {
   confirmMatchCommitment,
+  endMatchThunk,
   fetchMatches,
 } from '@/src/features/matches/matchesSlice';
 import type { MatchWithPartner } from '@/src/features/matches/matchesService';
@@ -14,13 +15,8 @@ import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 
 export default function MatchesScreen() {
   const dispatch = useAppDispatch();
-  const { pending, active, loading, error, confirmingById } = useAppSelector(
+  const { pending, loading, error, confirmingById, endingById } = useAppSelector(
     (state) => state.matches,
-  );
-
-  const allMatches = useMemo(
-    () => [...pending, ...active],
-    [pending, active],
   );
 
   useEffect(() => {
@@ -42,31 +38,42 @@ export default function MatchesScreen() {
     };
   }, [dispatch]);
 
-  const getButtonConfig = (item: MatchWithPartner) => {
-    if (item.uiState === 'active') {
-      return {
-        label: 'Create Shared Goal',
-        disabled: false,
-        onPress: () => {
-          // Shared goal flow will be wired in the next feature iteration.
-        },
-      };
-    }
+  const getActions = (item: MatchWithPartner) => {
+    const isConfirming = Boolean(confirmingById[item.match.id]);
+    const isEnding = Boolean(endingById[item.match.id]);
 
     if (item.uiState === 'waiting_partner') {
       return {
-        label: 'Waiting for partner to confirm',
-        disabled: true,
-        onPress: undefined,
+        primaryAction: {
+          label: 'Cancel Commitment',
+          variant: 'secondary' as const,
+          loading: isEnding,
+          disabled: isEnding,
+          onPress: () => dispatch(endMatchThunk({ matchId: item.match.id })),
+        },
+        secondaryAction: undefined,
       };
     }
 
     return {
-      label: 'Start Commitment',
-      disabled: false,
-      onPress: () => dispatch(confirmMatchCommitment({ matchId: item.match.id })),
+      primaryAction: {
+        label: 'Start Commitment',
+        variant: 'primary' as const,
+        loading: isConfirming,
+        disabled: isConfirming || isEnding,
+        onPress: () => dispatch(confirmMatchCommitment({ matchId: item.match.id })),
+      },
+      secondaryAction: {
+        label: 'Not Interested',
+        variant: 'secondary' as const,
+        loading: isEnding,
+        disabled: isEnding || isConfirming,
+        onPress: () => dispatch(endMatchThunk({ matchId: item.match.id })),
+      },
     };
   };
+
+  const isEmpty = pending.length === 0;
 
   return (
     <ScreenContainer>
@@ -76,37 +83,39 @@ export default function MatchesScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {loading && allMatches.length === 0 ? (
+        {loading && isEmpty ? (
           <View style={styles.loaderWrap}>
             <ActivityIndicator color="#93C5FD" size="large" />
           </View>
+        ) : isEmpty ? (
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyTitle}>No matches yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Right-swipe to connect. Mutual likes appear here.
+            </Text>
+          </View>
         ) : (
-          <FlatList
-            data={allMatches}
-            keyExtractor={(item) => item.match.id}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <View style={styles.emptyWrap}>
-                <Text style={styles.emptyTitle}>No matches yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Right-swipe to connect. Mutual likes appear here.
-                </Text>
-              </View>
-            }
-            renderItem={({ item }) => {
-              const button = getButtonConfig(item);
+          <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Pending Commitments</Text>
+              {pending.length === 0 ? (
+                <Text style={styles.sectionEmpty}>No pending commitments.</Text>
+              ) : (
+                pending.map((item) => {
+                  const actions = getActions(item);
 
-              return (
-                <MatchListCard
-                  item={item}
-                  buttonLabel={button.label}
-                  buttonLoading={Boolean(confirmingById[item.match.id])}
-                  buttonDisabled={button.disabled || Boolean(confirmingById[item.match.id])}
-                  onPress={button.onPress}
-                />
-              );
-            }}
-          />
+                  return (
+                    <MatchListCard
+                      key={item.match.id}
+                      item={item}
+                      primaryAction={actions.primaryAction}
+                      secondaryAction={actions.secondaryAction}
+                    />
+                  );
+                })
+              )}
+            </View>
+          </ScrollView>
         )}
       </Animated.View>
     </ScreenContainer>
@@ -130,8 +139,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   listContent: {
-    gap: 12,
+    gap: 16,
     paddingBottom: 24,
+  },
+  section: {
+    gap: 10,
+  },
+  sectionTitle: {
+    color: '#E2E8F0',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  sectionEmpty: {
+    color: '#94A3B8',
+    fontSize: 13,
   },
   loaderWrap: {
     flex: 1,

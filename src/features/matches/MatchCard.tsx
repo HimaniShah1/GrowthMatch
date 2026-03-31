@@ -19,23 +19,33 @@ const availabilityLabel: Record<string, string> = {
 };
 
 const statusLabelMap: Record<MatchWithPartner['uiState'], string> = {
-  pending: 'Pending Confirmation',
+  pending: 'Start a commitment together to stay accountable',
   waiting_partner: 'Waiting for partner to confirm',
   active: 'Commitment Active',
 };
 
+const statusIconMap: Record<MatchWithPartner['uiState'], string> = {
+  pending: '🤝',
+  waiting_partner: '⏳',
+  active: '🔥',
+};
+
+type MatchAction = {
+  label: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  variant?: 'primary' | 'secondary';
+};
+
 export function MatchListCard({
   item,
-  buttonLabel,
-  buttonLoading,
-  buttonDisabled,
-  onPress,
+  primaryAction,
+  secondaryAction,
 }: {
   item: MatchWithPartner;
-  buttonLabel?: string;
-  buttonLoading?: boolean;
-  buttonDisabled?: boolean;
-  onPress?: () => void;
+  primaryAction?: MatchAction;
+  secondaryAction?: MatchAction;
 }) {
   return (
     <View style={styles.card}>
@@ -45,7 +55,9 @@ export function MatchListCard({
       </View>
 
       <View style={styles.statusPill}>
-        <Text style={styles.statusPillText}>{statusLabelMap[item.uiState]}</Text>
+        <Text style={styles.statusPillText}>
+          {statusIconMap[item.uiState]} {statusLabelMap[item.uiState]}
+        </Text>
       </View>
 
       <View style={styles.detailRow}>
@@ -68,14 +80,29 @@ export function MatchListCard({
 
       <Text style={styles.goals}>{item.partner.goals.join(' • ') || 'No goals listed yet'}</Text>
 
-      {onPress ? (
-        <View style={styles.buttonWrap}>
-          <AppButton
-            label={buttonLabel ?? 'Start Commitment'}
-            loading={buttonLoading}
-            disabled={buttonDisabled}
-            onPress={onPress}
-          />
+      {primaryAction || secondaryAction ? (
+        <View style={styles.buttonColumn}>
+          {primaryAction ? (
+            <AppButton
+              label={primaryAction.label}
+              loading={primaryAction.loading}
+              disabled={primaryAction.disabled}
+              variant={primaryAction.variant ?? 'primary'}
+              onPress={primaryAction.onPress ?? (() => {})}
+              style={styles.button}
+            />
+          ) : null}
+
+          {secondaryAction ? (
+            <AppButton
+              label={secondaryAction.label}
+              loading={secondaryAction.loading}
+              disabled={secondaryAction.disabled}
+              variant={secondaryAction.variant ?? 'secondary'}
+              onPress={secondaryAction.onPress ?? (() => {})}
+              style={styles.button}
+            />
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -106,18 +133,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   statusPill: {
-    borderRadius: 999,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#111827',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderColor: '#2C3A54',
+    backgroundColor: '#0F172A',
+    alignSelf: 'stretch',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   statusPillText: {
     color: '#C7D2FE',
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
   },
   detailRow: {
     flexDirection: 'row',
@@ -137,7 +164,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
-  buttonWrap: {
+  buttonColumn: {
     marginTop: 6,
+    gap: 10,
+  },
+  button: {
+    width: '100%',
   },
 });
