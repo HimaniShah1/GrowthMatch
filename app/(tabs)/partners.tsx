@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -60,11 +61,12 @@ export default function PartnersScreen() {
               <MatchListCard
                 item={item}
                 primaryAction={{
-                  label: 'Open Goal Tracker',
+                  label: 'Create Shared Goal',
                   variant: 'primary',
-                  onPress: () => {
-                    // Goal tracker route will be wired in a dedicated feature.
-                  },
+                  onPress: () =>
+                    router.push(
+                      `/goals/${item.match.id}?partnerName=${encodeURIComponent(item.partner.name)}` as never,
+                    ),
                 }}
                 secondaryAction={{
                   label: 'End Commitment',

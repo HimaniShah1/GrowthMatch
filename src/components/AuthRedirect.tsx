@@ -49,7 +49,8 @@ export function AuthRedirect() {
       pathname.startsWith('/(tabs)') ||
       pathname === '/discover' ||
       pathname === '/matches' ||
-      pathname === '/partners';
+      pathname === '/partners' ||
+      pathname.startsWith('/goals');
 
     if (!user) {
       if (!inAuth) {
